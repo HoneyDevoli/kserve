@@ -86,7 +86,15 @@ RUN --mount=type=cache,target=/root/.cache/uv cd huggingfaceserver && uv sync --
 # Install vllm
 # https://docs.vllm.ai/en/latest/models/extensions/runai_model_streamer.html, https://docs.vllm.ai/en/latest/models/extensions/tensorizer.html
 # https://docs.vllm.ai/en/latest/models/extensions/fastsafetensor.html
-RUN --mount=type=cache,target=/root/.cache/pip pip install vllm[runai,tensorizer,fastsafetensors]==${VLLM_VERSION}
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install "vllm[runai,tensorizer,fastsafetensors]==0.9.2"
+
+# Overlay patched Python files from HoneyDevoli/vllm fork on top of upstream wheel
+RUN git clone --depth 1 --branch v0.9.2-inferencevalve \
+      https://github.com/HoneyDevoli/vllm.git /tmp/vllm-fork \
+ && cp -rT /tmp/vllm-fork/vllm ${VIRTUAL_ENV}/lib/python${PYTHON_VERSION}/site-packages/vllm \
+ && rm -rf /tmp/vllm-fork \
+ && python3 -c "from vllm.worker.cpu_worker import CPUWorker; print('V0 CPUWorker imported OK')" 2>/dev/null
 
 # Install lmcache
 RUN --mount=type=cache,target=/root/.cache/pip pip install lmcache==${LMCACHE_VERSION}
