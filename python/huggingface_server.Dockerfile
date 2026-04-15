@@ -80,7 +80,12 @@ RUN --mount=type=cache,target=/root/.cache/pypoetry cd huggingfaceserver && poet
 # Install vllm
 # https://docs.vllm.ai/en/latest/models/extensions/runai_model_streamer.html, https://docs.vllm.ai/en/latest/models/extensions/tensorizer.html
 # https://docs.vllm.ai/en/latest/models/extensions/fastsafetensor.html
-RUN --mount=type=cache,target=/root/.cache/pip pip install vllm[runai,tensorizer,fastsafetensors]==${VLLM_VERSION}
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip download --no-deps --only-binary=:all: --dest=/tmp/vllm-wheel vllm==0.8.5.post1 \
+ && echo "Downloaded: $(ls /tmp/vllm-wheel/)" \
+ && VLLM_USE_PRECOMPILED=1 \
+    VLLM_PRECOMPILED_WHEEL_LOCATION=$(ls /tmp/vllm-wheel/vllm-*.whl | head -1) \
+    pip install "vllm[runai,tensorizer,fastsafetensors] @ git+https://github.com/HoneyDevoli/vllm.git@v0.8.5.post1-inferencevalve"
 
 # Install lmcache
 RUN --mount=type=cache,target=/root/.cache/pip pip install lmcache==${LMCACHE_VERSION}
