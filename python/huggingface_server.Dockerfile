@@ -80,10 +80,18 @@ RUN --mount=type=cache,target=/root/.cache/pypoetry cd huggingfaceserver && poet
 # Install vllm
 # https://docs.vllm.ai/en/latest/models/extensions/runai_model_streamer.html, https://docs.vllm.ai/en/latest/models/extensions/tensorizer.html
 # https://docs.vllm.ai/en/latest/models/extensions/fastsafetensor.html
-RUN --mount=type=cache,target=/root/.cache/pip pip install vllm[runai,tensorizer,fastsafetensors]==${VLLM_VERSION}
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install "vllm[runai,tensorizer,fastsafetensors]==0.8.5.post1"
+
+# Overlay patched Python files from HoneyDevoli/vllm fork on top of upstream wheel
+RUN git clone --depth 1 --branch v0.8.5.post1-inferencevalve \
+      https://github.com/HoneyDevoli/vllm.git /tmp/vllm-fork \
+ && cp -rT /tmp/vllm-fork/vllm ${VIRTUAL_ENV}/lib/python${PYTHON_VERSION}/site-packages/vllm \
+ && rm -rf /tmp/vllm-fork \
+ && python3 -c "from vllm.v1.engine.async_llm import AsyncLLM; import inspect; src=inspect.getsource(AsyncLLM.check_health); assert 'errored' in src, src" 2>/dev/null
 
 # Install lmcache
-RUN --mount=type=cache,target=/root/.cache/pip pip install lmcache==${LMCACHE_VERSION}
+RUN --mount=type=cache,target=/root/.cache/pip pip install https://github.com/LMCache/LMCache/releases/download/v0.2.1/lmcache-0.2.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 
 # Generate third-party licenses
 COPY pyproject.toml pyproject.toml
