@@ -88,7 +88,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install "vllm[runai,tensorizer,fastsafetensors] @ git+https://github.com/HoneyDevoli/vllm.git@v0.8.5.post1-inferencevalve"
 
 # Install lmcache
-RUN --mount=type=cache,target=/root/.cache/pip pip install lmcache==${LMCACHE_VERSION}
+RUN --mount=type=cache,target=/root/.cache/pip pip install https://github.com/LMCache/LMCache/releases/download/v0.2.1/lmcache-0.2.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 
 # Generate third-party licenses
 COPY pyproject.toml pyproject.toml
