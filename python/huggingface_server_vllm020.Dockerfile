@@ -6,9 +6,11 @@ FROM ${VLLM_IMAGE} AS base
 USER root
 WORKDIR ${WORKSPACE_DIR}
 
-RUN (command -v curl >/dev/null || (apt-get update && apt-get install -y curl)) \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && ln -s /root/.local/bin/uv /usr/local/bin/uv
+RUN command -v uv >/dev/null || ( \
+        (command -v curl >/dev/null || (apt-get update && apt-get install -y curl)) \
+        && curl -LsSf https://astral.sh/uv/install.sh | sh \
+        && ln -sf /root/.local/bin/uv /usr/local/bin/uv \
+    )
 
 COPY python/kserve/pyproject.toml python/kserve/uv.lock kserve/
 RUN --mount=type=cache,target=/root/.cache/uv cd kserve \
