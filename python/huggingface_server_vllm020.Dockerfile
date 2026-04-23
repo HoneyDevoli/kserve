@@ -31,6 +31,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
         'dulwich>=0.21.0' \
         'pyjwt>=2.12.0' \
         'pyasn>=0.6.3' \
+        'pandas<3.0.0,>=2.2.0' \
+        'hf-transfer>=0.1.9' \
         'modelscope<2.0.0,>=1.16.0'
 
 # Все kserve-пакеты ставим с --no-deps, чтобы не переустанавливать vllm/torch/transformers/nvidia-*
