@@ -142,7 +142,6 @@ class VLLMModel(OpenAIEncoderModel, OpenAIGenerativeModel):  # pylint:disable=c-
             openai_serving_render = OpenAIServingRender(
                 model_config=vllm_config.model_config,
                 renderer=self.engine_client.renderer,
-                io_processor=self.engine_client.io_processor,
                 model_registry=self.openai_serving_models.registry,
                 request_logger=self.request_logger,
                 chat_template=resolved_chat_template,
