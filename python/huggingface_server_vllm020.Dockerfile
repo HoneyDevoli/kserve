@@ -15,10 +15,25 @@ RUN command -v uv >/dev/null || ( \
         && ln -sf /root/.local/bin/uv /usr/local/bin/uv \
     )
 
+# Ставим kserve-специфичные Python-зависимости, которых нет в vllm-openai base.
+# Список собран из python/{kserve,storage,huggingfaceserver}/pyproject.toml, исключая то,
+# что уже присутствует в vllm (torch, transformers, accelerate, fastapi, uvicorn, pydantic,
+# aiohttp, numpy, pandas, starlette, httpx, cryptography, prometheus_client, grpcio).
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system --no-cache \
+        'cloudevents<2.0.0,>=1.6.2' \
+        'grpc-interceptor<1.0.0,>=0.15.4' \
+        'timing-asgi<1.0.0,>=0.3.0' \
+        'tabulate<1.0.0,>=0.9.0' \
+        'orjson<4.0.0,>=3.10.15' \
+        'asgi-logger<1.0.0,>=0.1.0' \
+        'kubernetes>=23.3.0' \
+        'dulwich>=0.21.0' \
+        'pyjwt>=2.12.0' \
+        'modelscope<2.0.0,>=1.16.0'
+
 # Все kserve-пакеты ставим с --no-deps, чтобы не переустанавливать vllm/torch/transformers/nvidia-*
 # из base-image (иначе huggingfaceserver pyproject.toml даунгрейдит их до pinned версий из upstream).
-# Недостающие чисто kserve-python зависимости (cloudevents, orjson и т.п.) могут всплыть при smoke —
-# добавляются отдельно по месту. vllm/torch/transformers берутся строго из vllm-openai base.
 
 COPY kserve/pyproject.toml kserve/uv.lock kserve/
 RUN --mount=type=cache,target=/root/.cache/uv cd kserve \
