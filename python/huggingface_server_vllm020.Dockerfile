@@ -3,6 +3,9 @@ ARG WORKSPACE_DIR=/kserve-workspace
 
 FROM ${VLLM_IMAGE} AS base
 
+# ARG сбрасывается после FROM — переобъявляем для доступа в RUN/chown ниже
+ARG WORKSPACE_DIR=/kserve-workspace
+
 USER root
 WORKDIR ${WORKSPACE_DIR}
 
@@ -12,20 +15,25 @@ RUN command -v uv >/dev/null || ( \
         && ln -sf /root/.local/bin/uv /usr/local/bin/uv \
     )
 
+# Все kserve-пакеты ставим с --no-deps, чтобы не переустанавливать vllm/torch/transformers/nvidia-*
+# из base-image (иначе huggingfaceserver pyproject.toml даунгрейдит их до pinned версий из upstream).
+# Недостающие чисто kserve-python зависимости (cloudevents, orjson и т.п.) могут всплыть при smoke —
+# добавляются отдельно по месту. vllm/torch/transformers берутся строго из vllm-openai base.
+
 COPY kserve/pyproject.toml kserve/uv.lock kserve/
 RUN --mount=type=cache,target=/root/.cache/uv cd kserve \
     && uv pip install --system . --no-cache --no-deps
 COPY kserve kserve
 RUN --mount=type=cache,target=/root/.cache/uv cd kserve \
-    && uv pip install --system . --no-cache
+    && uv pip install --system . --no-cache --no-deps
 
 COPY storage storage
 RUN --mount=type=cache,target=/root/.cache/uv cd storage \
-    && uv pip install --system . --no-cache
+    && uv pip install --system . --no-cache --no-deps
 
 COPY huggingfaceserver huggingfaceserver
 RUN --mount=type=cache,target=/root/.cache/uv cd huggingfaceserver \
-    && uv pip install --system . --no-cache
+    && uv pip install --system . --no-cache --no-deps
 
 RUN useradd kserve -m -u 1000 -d /home/kserve \
     && chown -R kserve:kserve ${WORKSPACE_DIR}
