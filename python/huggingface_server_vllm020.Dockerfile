@@ -12,18 +12,18 @@ RUN command -v uv >/dev/null || ( \
         && ln -sf /root/.local/bin/uv /usr/local/bin/uv \
     )
 
-COPY python/kserve/pyproject.toml python/kserve/uv.lock kserve/
+COPY kserve/pyproject.toml kserve/uv.lock kserve/
 RUN --mount=type=cache,target=/root/.cache/uv cd kserve \
     && uv pip install --system . --no-cache --no-deps
-COPY python/kserve kserve
+COPY kserve kserve
 RUN --mount=type=cache,target=/root/.cache/uv cd kserve \
     && uv pip install --system . --no-cache
 
-COPY python/storage storage
+COPY storage storage
 RUN --mount=type=cache,target=/root/.cache/uv cd storage \
     && uv pip install --system . --no-cache
 
-COPY python/huggingfaceserver huggingfaceserver
+COPY huggingfaceserver huggingfaceserver
 RUN --mount=type=cache,target=/root/.cache/uv cd huggingfaceserver \
     && uv pip install --system . --no-cache
 
