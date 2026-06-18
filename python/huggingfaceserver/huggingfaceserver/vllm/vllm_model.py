@@ -151,6 +151,7 @@ class VLLMModel(OpenAIEncoderModel, OpenAIGenerativeModel):  # pylint:disable=c-
                 exclude_tools_when_tool_choice_none=self.args.exclude_tools_when_tool_choice_none,
                 tool_parser=self.args.tool_call_parser,
                 log_error_stack=self.args.log_error_stack,
+                default_chat_template_kwargs=self.args.default_chat_template_kwargs,
             )
 
             self.openai_serving_chat = (
@@ -171,6 +172,7 @@ class VLLMModel(OpenAIEncoderModel, OpenAIGenerativeModel):  # pylint:disable=c-
                     enable_prompt_tokens_details=self.args.enable_prompt_tokens_details,
                     enable_force_include_usage=self.args.enable_force_include_usage,
                     enable_log_outputs=self.args.enable_log_outputs,
+                    default_chat_template_kwargs=self.args.default_chat_template_kwargs,
                 )
                 if "generate" in supported_tasks
                 else None
