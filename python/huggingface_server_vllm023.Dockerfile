@@ -1,6 +1,7 @@
-# KServe HF server поверх стабильного vLLM 0.23 (CUDA 13.0). Только sm_75+ (A100 и новее) —
-# vLLM 0.20+ выпилил Volta/sm_70, на V100 не запускается. Параллельный образ к :v0.20.0.
-ARG VLLM_IMAGE=vllm/vllm-openai:v0.23.0-cu130
+# KServe HF server поверх стабильного vLLM 0.23 (канонический тег = CUDA 12.9; cu130 для 0.23
+# не публикуется). Только sm_75+ (A100 и новее) — vLLM 0.20+ выпилил Volta/sm_70, на V100
+# не запускается. Параллельный образ к :v0.20.0.
+ARG VLLM_IMAGE=vllm/vllm-openai:v0.23.0
 ARG WORKSPACE_DIR=/kserve-workspace
 
 FROM ${VLLM_IMAGE} AS base
