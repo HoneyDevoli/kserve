@@ -1,4 +1,7 @@
-ARG VLLM_IMAGE=vllm/vllm-openai:nightly-fe9c3d6c5f66c873d196800384ed6880687b9e52
+# vLLM 0.20 зарелижен — берём стабильный образ вместо nightly-пина.
+# nightly-теги эфемерны и уже выпилены с Docker Hub, из-за чего пересборка со старым
+# пином не тянула base. Доступны также v0.20.1 / v0.20.2 (багфиксы той же линейки).
+ARG VLLM_IMAGE=vllm/vllm-openai:v0.20.0
 ARG WORKSPACE_DIR=/kserve-workspace
 
 FROM ${VLLM_IMAGE} AS base
