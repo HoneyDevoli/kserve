@@ -213,6 +213,11 @@ class VLLMModel(OpenAIEncoderModel, OpenAIGenerativeModel):  # pylint:disable=c-
                     self.engine_client,
                     self.openai_serving_models,
                     request_logger=self.request_logger,
+                    chat_template_config=ChatTemplateConfig(
+                        chat_template=resolved_chat_template,
+                        chat_template_content_format=self.args.chat_template_content_format,
+                        trust_request_chat_template=self.args.trust_request_chat_template,
+                    ),
                     supported_tasks=supported_tasks,
                     log_error_stack=self.args.log_error_stack,
                 )
