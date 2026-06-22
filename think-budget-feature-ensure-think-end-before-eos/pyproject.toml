@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "think-budget"
+version = "0.4.0"
+description = "vLLM logits processor for controlling thinking token budget in reasoning models"
+requires-python = ">=3.10"
+dependencies = ["torch"]
+
+[tool.setuptools]
+py-modules = ["think_budget"]
