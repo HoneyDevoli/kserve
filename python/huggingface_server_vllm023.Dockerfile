@@ -53,6 +53,10 @@ COPY storage storage
 RUN --mount=type=cache,target=/root/.cache/uv cd storage \
     && uv pip install --system . --no-cache --no-deps
 
+COPY think-budget think-budget
+RUN --mount=type=cache,target=/root/.cache/uv cd think-budget \
+    && uv pip install --system . --no-cache --no-deps
+
 COPY huggingfaceserver huggingfaceserver
 RUN --mount=type=cache,target=/root/.cache/uv cd huggingfaceserver \
     && uv pip install --system . --no-cache --no-deps
