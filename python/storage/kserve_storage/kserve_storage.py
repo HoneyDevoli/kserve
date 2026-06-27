@@ -73,6 +73,14 @@ _worker_s3_resource = None
 # Azure async download configuration
 _AZURE_MAX_FILE_CONCURRENCY = int(os.getenv("AZURE_MAX_FILE_CONCURRENCY", "4"))
 _AZURE_MAX_CHUNK_CONCURRENCY = int(os.getenv("AZURE_MAX_CHUNK_CONCURRENCY", "4"))
+# HuggingFace parallel download configuration.
+# snapshot_download fans out across files concurrently; with the Xet backend
+# (hf_xet) each in-flight file holds reconstruction buffers, so peak memory
+# scales with the number of files downloaded at once. Bounding this lets a
+# memory-constrained storage-initializer download large multi-shard models
+# without OOM. Default 8 matches huggingface_hub's own default (no behavior
+# change unless explicitly lowered, e.g. HF_MAX_FILE_CONCURRENCY=1).
+_HF_MAX_FILE_CONCURRENCY = int(os.getenv("HF_MAX_FILE_CONCURRENCY", "8"))
 
 
 def _should_download(
@@ -568,7 +576,12 @@ class Storage(object):
         repo_id = f"{repo}/{model}"
 
         try:
-            kwargs = dict(repo_id=repo_id, revision=revision, local_dir=temp_dir)
+            kwargs = dict(
+                repo_id=repo_id,
+                revision=revision,
+                local_dir=temp_dir,
+                max_workers=_HF_MAX_FILE_CONCURRENCY,
+            )
             if allow_patterns:
                 kwargs["allow_patterns"] = allow_patterns
             if ignore_patterns:
