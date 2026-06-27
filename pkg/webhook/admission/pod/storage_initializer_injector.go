@@ -740,12 +740,32 @@ func mergeContainerSpecs(targetContainer *corev1.Container, crdContainer *corev1
 
 	containerName := targetContainer.Name
 
-	defaultContainerJson, err := json.Marshal(*targetContainer)
+	// Merge env vars by name explicitly, outside of the strategic merge below.
+	//
+	// StrategicMergePatch does not honour the "name" patchMergeKey for the env
+	// list here — it overlays entries by position. When the target container
+	// already sources env vars from secrets (e.g. S3 or HuggingFace credentials
+	// via valueFrom) and the ClusterStorageContainer supplies env vars with a
+	// literal value, the positional overlay produces entries carrying BOTH value
+	// and valueFrom, which the API server rejects:
+	//   env[i].valueFrom: Invalid value: "": may not be specified when `value` is not empty
+	// so the init container — and therefore the whole predictor pod — is never
+	// created. Pulling env out of the strategic merge and merging it by name keeps
+	// credential env (valueFrom) intact while letting the CSC add or override
+	// individual variables.
+	mergedEnv := mergeEnvVarsByName(targetContainer.Env, crdContainer.Env)
+
+	targetNoEnv := *targetContainer
+	targetNoEnv.Env = nil
+	crdNoEnv := *crdContainer
+	crdNoEnv.Env = nil
+
+	defaultContainerJson, err := json.Marshal(targetNoEnv)
 	if err != nil {
 		return err
 	}
 
-	overrides, err := json.Marshal(*crdContainer)
+	overrides, err := json.Marshal(crdNoEnv)
 	if err != nil {
 		return err
 	}
@@ -759,11 +779,48 @@ func mergeContainerSpecs(targetContainer *corev1.Container, crdContainer *corev1
 		return err
 	}
 
+	targetContainer.Env = mergedEnv
+
 	if targetContainer.Name == "" {
 		targetContainer.Name = containerName
 	}
 
 	return nil
+}
+
+// mergeEnvVarsByName merges override env vars into base, keyed by env var name.
+// An override entry fully replaces the base entry with the same name, so a
+// literal value cleanly supersedes a prior valueFrom (and vice versa) without
+// ever producing an entry that sets both. Names present in only one of the lists
+// are preserved. Base ordering is kept; names new to base are appended in
+// override order.
+func mergeEnvVarsByName(base, overrides []corev1.EnvVar) []corev1.EnvVar {
+	if len(overrides) == 0 {
+		return base
+	}
+
+	overrideByName := make(map[string]corev1.EnvVar, len(overrides))
+	for _, e := range overrides {
+		overrideByName[e.Name] = e
+	}
+
+	merged := make([]corev1.EnvVar, 0, len(base)+len(overrides))
+	replaced := make(map[string]bool, len(overrides))
+	for _, e := range base {
+		if ov, ok := overrideByName[e.Name]; ok {
+			merged = append(merged, ov)
+			replaced[e.Name] = true
+		} else {
+			merged = append(merged, e)
+		}
+	}
+	for _, e := range overrides {
+		if !replaced[e.Name] {
+			merged = append(merged, e)
+		}
+	}
+
+	return merged
 }
 
 func needCaBundleMount(caBundleConfigMapName string, initContainer *corev1.Container) bool {
